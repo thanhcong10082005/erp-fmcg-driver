@@ -6,12 +6,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
 /// <reference types="vite/client" />
 
-const RAW_API_URL = (import.meta as unknown as { env: { VITE_API_URL?: string } }).env.VITE_API_URL || 'http://localhost:3001';
-
-// Normalize: ensure baseURL ends with `/api` so call sites can use paths like `/auth/...`
-const BASE_URL: string = /\/api\/?$/.test(RAW_API_URL)
-  ? RAW_API_URL.replace(/\/$/, '')
-  : `${RAW_API_URL.replace(/\/$/, '')}/api`;
+const BASE_URL: string = import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
 const api = axios.create({
   baseURL: BASE_URL,
