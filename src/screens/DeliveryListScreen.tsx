@@ -33,7 +33,7 @@ export const DeliveryListScreen: React.FC = () => {
         await ensureDbOpen();
         // Try online first
         try {
-          const res = await api.get(`/api/sales/trips/${tripId}`);
+          const res = await api.get(`/sales/trips/${tripId}`);
           useDriverStore.setState({
             currentTrip: res.data,
             orders: res.data.orders || [],

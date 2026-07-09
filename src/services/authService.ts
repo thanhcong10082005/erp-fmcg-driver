@@ -35,7 +35,7 @@ export async function devLogin(identifier: string): Promise<AuthResponse> {
     body = { phone: identifier };
   }
 
-  const response = await api.post<AuthResponse>('/api/auth/dev-login', body);
+  const response = await api.post<AuthResponse>('/auth/dev-login', body);
   const data = response.data;
 
   localStorage.setItem('driver_token', data.access_token);
@@ -50,8 +50,8 @@ export async function syncMasterData(tenantId: string): Promise<void> {
   await ensureDbOpen();
 
   const [partnersRes, productsRes] = await Promise.all([
-    api.get(`/api/partners?limit=10000&tenant_id=${tenantId}`),
-    api.get(`/api/products?limit=10000&tenant_id=${tenantId}`),
+    api.get(`/partners?limit=10000&tenant_id=${tenantId}`),
+    api.get(`/products?limit=10000&tenant_id=${tenantId}`),
   ]);
 
   await db.transaction('rw', [db.partners, db.products], async () => {

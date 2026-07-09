@@ -161,7 +161,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
     });
 
     try {
-      const response = await api.get(`/api/sales/trips/${tripId}`);
+      const response = await api.get(`/sales/trips/${tripId}`);
       const trip = normalize(response.data);
       const orders: OrderWithPayment[] = (trip.orders || []) as OrderWithPayment[];
 
@@ -185,7 +185,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
   startTrip: async (tripId) => {
     set({ isLoading: true });
     try {
-      await api.put(`/api/sales/trips/${tripId}/start`);
+      await api.put(`/sales/trips/${tripId}/start`);
       await get().loadCurrentTrip(tripId);
     } catch {
       set({ error: 'Không thể bắt đầu chuyến xe — kiểm tra kết nối', isLoading: false });
@@ -221,7 +221,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
 
     if (navigator.onLine) {
       try {
-        await api.post('/api/sales/pod', payload);
+        await api.post('/sales/pod', payload);
       } catch {
         // queue offline
       }
@@ -283,7 +283,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
 
     if (navigator.onLine) {
       try {
-        await api.post('/api/sales/pod', payload);
+        await api.post('/sales/pod', payload);
       } catch {
         // queue offline
       }
@@ -342,7 +342,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
 
     if (navigator.onLine) {
       try {
-        await api.post('/api/sales/pod', payload);
+        await api.post('/sales/pod', payload);
       } catch {
         // queue offline
       }
@@ -403,7 +403,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
 
     if (navigator.onLine) {
       try {
-        await api.put(`/api/sales/trips/${currentTrip.trip_id}/complete`);
+        await api.put(`/sales/trips/${currentTrip.trip_id}/complete`);
       } catch {
         // queued offline
       }
