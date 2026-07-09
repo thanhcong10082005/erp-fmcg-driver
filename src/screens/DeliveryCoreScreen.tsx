@@ -83,7 +83,7 @@ export const DeliveryCoreScreen: React.FC = () => {
       await ensureDbOpen();
       // Try online first
       try {
-        const res = await api.get(`/sales/trips/${tripIdNum}`);
+        const res = await api.get(`/api/sales/trips/${tripIdNum}`);
         const trip = normalizeTrip(res.data);
         useDriverStore.setState({
           currentTrip: trip,

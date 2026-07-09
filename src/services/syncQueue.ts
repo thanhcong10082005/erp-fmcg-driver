@@ -54,7 +54,7 @@ class SyncManager {
     await markPodSyncing(podId);
 
     try {
-      const response = await api.post('/sales/pod', pod.payload);
+      const response = await api.post('/api/sales/pod', pod.payload);
       await markPodSynced(podId);
 
       // Log to syncLog

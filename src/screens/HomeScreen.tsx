@@ -31,7 +31,7 @@ export const HomeScreen: React.FC = () => {
     setLoading(true);
     try {
       // Fetch trip assigned to this driver with DELIVERING status
-      const response = await api.get('/sales/trips', {
+      const response = await api.get('/api/sales/trips', {
         params: { driver_id: user?.user_id, status: 'DELIVERING' },
       });
       const trips: DeliveryTrip[] = response.data;
@@ -42,7 +42,7 @@ export const HomeScreen: React.FC = () => {
         await loadCurrentTrip(trip.trip_id);
       } else {
         // No active trip — try PREPARING
-        const prepRes = await api.get('/sales/trips', {
+        const prepRes = await api.get('/api/sales/trips', {
           params: { driver_id: user?.user_id, status: 'PREPARING' },
         });
         const prepTrips: DeliveryTrip[] = prepRes.data;
