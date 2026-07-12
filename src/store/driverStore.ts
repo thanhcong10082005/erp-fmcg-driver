@@ -19,6 +19,7 @@ import {
 } from '../services/offlineDB';
 import api from '../api/apiClient';
 import { syncManager } from '../services/syncQueue';
+import { getCurrentPosition, haversineDistance } from '../services/gpsService';
 
 // ── Extended order with local payment data ──────────────────
 export interface OrderWithPayment extends TripOrder {
@@ -75,6 +76,15 @@ interface DriverState {
     reason: string,
     photoData: string,
   ) => Promise<void>;
+
+  // Phase 4 — internal helper (best-effort GPS capture)
+  _captureGPSPayload: (order: OrderWithPayment) => Promise<{
+    delivery_latitude: number;
+    delivery_longitude: number;
+    delivery_gps_accuracy_m: number;
+    distance_to_partner_m: number | null;
+    gps_captured_at: string;
+  } | null>;
 
   // EOD
   completeTrip: () => Promise<EODReport>;
@@ -198,10 +208,40 @@ export const useDriverStore = create<DriverState>((set, get) => ({
     await get().loadCurrentTrip(currentTrip.trip_id);
   },
 
+  // ── Phase 4: GPS capture cho POD (helper, không export) ───
+  // Best-effort: nếu không lấy được GPS (timeout, browser không hỗ trợ),
+  // vẫn submit POD bình thường — không block business flow.
+  // (Đặt trong closure để truy cập `get()` của zustand)
+  _captureGPSPayload: async (order: OrderWithPayment) => {
+    try {
+      const pos = await getCurrentPosition();
+      let distance: number | null = null;
+      if (typeof order.partner_latitude === 'number' && typeof order.partner_longitude === 'number') {
+        distance = Math.round(haversineDistance(
+          pos.latitude, pos.longitude,
+          order.partner_latitude, order.partner_longitude,
+        ));
+      }
+      return {
+        delivery_latitude: pos.latitude,
+        delivery_longitude: pos.longitude,
+        delivery_gps_accuracy_m: pos.accuracy ?? 0,
+        distance_to_partner_m: distance,
+        gps_captured_at: new Date().toISOString(),
+      };
+    } catch (err) {
+      console.warn('[POD GPS] capture failed, submitting without GPS:', err);
+      return null;
+    }
+  },
+
   submitFullDelivery: async (tripOrderId, payment) => {
     const order = get().orders.find((o) => Number(o.trip_order_id) === tripOrderId);
     const { currentTrip } = get();
     if (!order || !currentTrip) throw new Error('Order not found');
+
+    // Phase 4: capture GPS tại điểm giao
+    const gps = await get()._captureGPSPayload(order);
 
     const payload = {
       trip_order_id: tripOrderId,
@@ -217,6 +257,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       total_collected: payment.totalCollected,
       recipient_name: payment.recipientName,
       notes: payment.notes,
+      ...(gps || {}),  // spread GPS nếu có, không có thì bỏ qua
     };
 
     if (navigator.onLine) {
@@ -262,6 +303,9 @@ export const useDriverStore = create<DriverState>((set, get) => ({
     const { currentTrip } = get();
     if (!order || !currentTrip) throw new Error('Order not found');
 
+    // Phase 4: capture GPS
+    const gps = await get()._captureGPSPayload(order);
+
     const payload = {
       trip_order_id: tripOrderId,
       so_id: order.so_id,
@@ -279,6 +323,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       signature_url: signatureData,
       photos: [photoData],
       delivered_items: items,
+      ...(gps || {}),
     };
 
     if (navigator.onLine) {
@@ -323,6 +368,9 @@ export const useDriverStore = create<DriverState>((set, get) => ({
     const { currentTrip } = get();
     if (!order || !currentTrip) throw new Error('Order not found');
 
+    // Phase 4: capture GPS (kể cả khi fail delivery, vẫn ghi nhận vị trí tài xế)
+    const gps = await get()._captureGPSPayload(order);
+
     const payload = {
       trip_order_id: tripOrderId,
       so_id: order.so_id,
@@ -338,6 +386,7 @@ export const useDriverStore = create<DriverState>((set, get) => ({
       total_collected: 0,
       notes: reason,
       photos: [photoData],
+      ...(gps || {}),
     };
 
     if (navigator.onLine) {

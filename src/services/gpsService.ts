@@ -36,6 +36,8 @@ function haversineDistance(
   return R * c;
 }
 
+export { haversineDistance };
+
 export async function getCurrentPosition(): Promise<GeoPosition> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
